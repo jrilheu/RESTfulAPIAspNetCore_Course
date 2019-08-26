@@ -1,4 +1,4 @@
-﻿ using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -24,21 +24,24 @@ namespace Library.API.Controllers
         [HttpGet]
         public IActionResult GetAuthors()
         {
+            IEnumerable<AuthorDto> authors;
+
             var authorsFromRepo = _libraryRepository.GetAuthors();
-            var authors = new List<AuthorDto>();
+            authors = AutoMapper.Mapper.Map<IEnumerable<AuthorDto>>(authorsFromRepo);
 
-            foreach (var author in authorsFromRepo)
-            {
-                authors.Add(new AuthorDto()
-                {
-                    Id = author.Id,
-                    Name = $"{author.FirstName}  {author.LastName}",
-                    Genre = author.Genre,
-                    Age = author.DateOfBirth.GetCurrentAge()
-                });
-            }
+            return Ok(authors);
+        }
 
-            return new JsonResult(authors);
+        [HttpGet("{id}")]
+        public IActionResult GetAuthor(Guid id)
+        {
+            var authorsFromRepo = _libraryRepository.GetAuthor(id);
+
+            if (authorsFromRepo == null)
+                return NotFound();
+
+            var author = AutoMapper.Mapper.Map<AuthorDto>(authorsFromRepo);
+            return Ok(author);
         }
     }
 }
