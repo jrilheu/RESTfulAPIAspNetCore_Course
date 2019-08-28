@@ -10,7 +10,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Library.API.Controllers
 {
-    [Produces("application/json")]
     [Route("api/Authors")]
     public class AuthorsController : Controller
     {
@@ -31,6 +30,7 @@ namespace Library.API.Controllers
 
             return Ok(authors);
         }
+
 
         [HttpGet("{id}")]
         public IActionResult GetAuthor(Guid id)
