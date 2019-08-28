@@ -32,7 +32,7 @@ namespace Library.API.Controllers
         }
 
 
-        [HttpGet("{id}")]
+        [HttpGet("{id}", Name = "GetAuthor")]
         public IActionResult GetAuthor(Guid id)
         {
             var authorsFromRepo = _libraryRepository.GetAuthor(id);
@@ -42,6 +42,26 @@ namespace Library.API.Controllers
 
             var author = AutoMapper.Mapper.Map<AuthorDto>(authorsFromRepo);
             return Ok(author);
+        }
+
+        [HttpPost]
+        public IActionResult CreateAuthor([FromBody] AuthorForCreationDTO author)
+        {
+            if (author == null)
+            {
+                return BadRequest();
+            }
+
+            var authorEntity = AutoMapper.Mapper.Map<Entities.Author>(author);
+            _libraryRepository.AddAuthor(authorEntity);
+            if (!_libraryRepository.Save())
+            {
+                throw new Exception("dallo la creacion del autor al guardar");
+            }
+
+            var authorToReturn = AutoMapper.Mapper.Map<Models.AuthorDto>(authorEntity);
+
+            return CreatedAtRoute("GetAuthor", new { id = authorToReturn.Id}, authorToReturn);
         }
     }
 }
