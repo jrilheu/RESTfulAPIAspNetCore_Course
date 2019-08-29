@@ -33,7 +33,7 @@ namespace Library.API.Controllers
             return Ok(books);
         }
 
-        [HttpGet("api/authors/{authorId}/books/{id}")]
+        [HttpGet("api/authors/{authorId}/books/{id}", Name = "GetBookForAuthor")]
         public IActionResult GetBookForAuthor(Guid authorId, Guid id)
         {
             if (!_libraryRepository.AuthorExists(authorId))
@@ -50,5 +50,31 @@ namespace Library.API.Controllers
             var bookForAuthor = AutoMapper.Mapper.Map<BookDTO>(bookForAuthorsFromRepo);
             return Ok(bookForAuthor);
         }
+
+        [HttpPost("api/authors/{authorId}/books")]
+        public IActionResult CreateBookForAuthor(Guid authorId, [FromBody] BookForCreationDTO book)
+        {
+            if (book == null)
+            {
+                return BadRequest();
+            }
+
+            if (!_libraryRepository.AuthorExists(authorId))
+            {
+                return NotFound();
+            }
+
+            var bookEntity = AutoMapper.Mapper.Map<Entities.Book>(book);
+            _libraryRepository.AddBookForAuthor(authorId, bookEntity);
+            if(!_libraryRepository.Save())
+            {
+                throw new Exception($"Creating a book for {authorId} failed on save");
+            }
+
+            var bookToReturn = AutoMapper.Mapper.Map<Models.BookDTO>(bookEntity);
+            return CreatedAtRoute("GetBookForAuthor", new { id = bookToReturn.Id }, bookToReturn);
+        }
+
+
     }
 }
