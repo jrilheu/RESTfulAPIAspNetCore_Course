@@ -31,6 +31,8 @@ namespace Library.API
                 {
                     options.RespectBrowserAcceptHeader = true;
                     options.ReturnHttpNotAcceptable = true;
+                    options.OutputFormatters.Add(new XmlDataContractSerializerOutputFormatter());
+                    options.InputFormatters.Add(new XmlDataContractSerializerInputFormatter());
                 })
                 .AddXmlDataContractSerializerFormatters();
 

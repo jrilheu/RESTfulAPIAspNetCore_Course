@@ -61,7 +61,18 @@ namespace Library.API.Controllers
 
             var authorToReturn = AutoMapper.Mapper.Map<Models.AuthorDto>(authorEntity);
 
-            return CreatedAtRoute("GetAuthor", new { id = authorToReturn.Id}, authorToReturn);
+            return CreatedAtRoute("GetAuthor", new { id = authorToReturn.Id }, authorToReturn);
+        }
+
+        [HttpPost("{id}")]
+        public IActionResult BlokAuthorCreation(Guid id)
+        {
+            if (_libraryRepository.AuthorExists(id))
+            {
+                return new StatusCodeResult(StatusCodes.Status409Conflict);
+            }
+
+            return NotFound();
         }
     }
 }
