@@ -76,6 +76,8 @@ namespace Library.API
                 config.CreateMap<Entities.Book, Models.BookDTO>();
                 config.CreateMap<Models.AuthorForCreationDTO, Entities.Author>();
                 config.CreateMap<Models.BookForCreationDTO, Entities.Book>();
+                config.CreateMap<Models.BookForUpdateDTO, Entities.Book>();
+                config.CreateMap<Entities.Book, Models.BookForUpdateDTO>();
             });
 
             libraryContext.EnsureSeedDataForContext();
