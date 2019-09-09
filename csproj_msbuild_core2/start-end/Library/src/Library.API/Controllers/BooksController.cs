@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Library.API.Controllers
 {
+    [Route("api/authors/{authorId}/books")]
     public class BooksController : Controller
     {
         ILibraryRepository _libraryRepository;
@@ -19,7 +20,6 @@ namespace Library.API.Controllers
             this._libraryRepository = libraryRepository;
         }
 
-        [HttpGet("api/authors/{authorId}/books")]
         public IActionResult GetBooksForAuthors(Guid authorId)
         {
             if (!_libraryRepository.AuthorExists(authorId))
@@ -33,7 +33,7 @@ namespace Library.API.Controllers
             return Ok(books);
         }
 
-        [HttpGet("api/authors/{authorId}/books/{id}", Name = "GetBookForAuthor")]
+        [HttpGet("{id}", Name = "GetBookForAuthor")]
         public IActionResult GetBookForAuthor(Guid authorId, Guid id)
         {
             if (!_libraryRepository.AuthorExists(authorId))
@@ -51,7 +51,7 @@ namespace Library.API.Controllers
             return Ok(bookForAuthor);
         }
 
-        [HttpPost("api/authors/{authorId}/books")]
+        [HttpPost]
         public IActionResult CreateBookForAuthor(Guid authorId, [FromBody] BookForCreationDTO book)
         {
             if (book == null)
@@ -75,6 +75,28 @@ namespace Library.API.Controllers
             return CreatedAtRoute("GetBookForAuthor", new { id = bookToReturn.Id }, bookToReturn);
         }
 
+        [HttpDelete("{id}")]
+        public IActionResult DeleteBookForAuthor(Guid authorId, Guid id)
+        {
+            if (!_libraryRepository.AuthorExists(authorId))
+            {
+                return NotFound();
+            }
 
+            var bookForAuthorsFromRepo = _libraryRepository.GetBookForAuthor(authorId, id);
+            if (bookForAuthorsFromRepo == null)
+            {
+                return NotFound();
+            }
+
+            _libraryRepository.DeleteBook(bookForAuthorsFromRepo);
+
+            if (_libraryRepository.Save())
+            {
+                throw new Exception($"failed deleting book {id} for author {authorId} on save");
+            }
+
+            return NoContent();
+        }
     }
 }
