@@ -218,8 +218,8 @@ namespace Library.API.Controllers
             }
 
             var bookToPatch = AutoMapper.Mapper.Map<BookForUpdateDto>(bookForAuthorsFromRepo);
-            //patchDocument.ApplyTo(bookToPatch, ModelState);
-            patchDocument.ApplyTo(bookToPatch);
+            patchDocument.ApplyTo(bookToPatch, ModelState);
+           
             if (bookToPatch.Description == bookToPatch.Title)
             {
                 ModelState.AddModelError(nameof(BookForUpdateDto),

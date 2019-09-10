@@ -11,23 +11,79 @@ namespace Library.API.Controllers
     public class AuthorsController : Controller
     {
         readonly ILibraryRepository _libraryRepository;
+        private readonly IUrlHelper _urlHelper;
 
-        public AuthorsController(ILibraryRepository libraryRepository)
+        public AuthorsController(ILibraryRepository libraryRepository, IUrlHelper urlHelper)
         {
             _libraryRepository = libraryRepository;
+            this._urlHelper = urlHelper;
         }
 
-        [HttpGet]
-        public IActionResult GetAuthors()
+        [HttpGet(Name = "GetAuthors")]
+        public IActionResult GetAuthors([FromQuery] Helpers.AuthorsResourceParameters parameters)
         {
             IEnumerable<AuthorDto> authors;
+            var authorsFromRepo = _libraryRepository.GetAuthors(parameters);
 
-            var authorsFromRepo = _libraryRepository.GetAuthors();
+            string previousPageLink = authorsFromRepo.HasPrevious ?
+                CreateAuthorsResourceUri(parameters, Helpers.ResourceUriType.PreviousPage) : null;
+
+            string nextPageLink = authorsFromRepo.HasNext ?
+                CreateAuthorsResourceUri(parameters, Helpers.ResourceUriType.NextPage) : null;
+
+            var paginationMetaData = new
+            {
+                totalCount = authorsFromRepo.TotalCount,
+                pageSize = authorsFromRepo.PageSize,
+                currentPage = authorsFromRepo.CurrentPage,
+                totalPages = authorsFromRepo.TotalPages,
+                previousPageLink,
+                nextPageLink
+            };
+
+            Response.Headers.Add("X-Pagination", Newtonsoft.Json.JsonConvert.SerializeObject(paginationMetaData));
+
             authors = AutoMapper.Mapper.Map<IEnumerable<AuthorDto>>(authorsFromRepo);
 
             return Ok(authors);
         }
 
+        string CreateAuthorsResourceUri(
+             Helpers.AuthorsResourceParameters authorsResourceParameters,
+             Helpers.ResourceUriType type)
+        {
+            switch (type)
+            {
+                case Helpers.ResourceUriType.PreviousPage:
+                    return _urlHelper.Link("GetAuthors",
+                      new
+                      {
+                          genre = authorsResourceParameters.Genre,
+                          searchQuery = authorsResourceParameters.SearchQuery,
+                          pageNumber = authorsResourceParameters.PageNumber - 1,
+                          pageSize = authorsResourceParameters.PageSize
+                      });
+                case Helpers.ResourceUriType.NextPage:
+                    return _urlHelper.Link("GetAuthors",
+                      new
+                      {
+                          genre = authorsResourceParameters.Genre,
+                          searchQuery = authorsResourceParameters.SearchQuery,
+                          pageNumber = authorsResourceParameters.PageNumber + 1,
+                          pageSize = authorsResourceParameters.PageSize
+                      });
+
+                default:
+                    return _urlHelper.Link("GetAuthors",
+                    new
+                    {
+                        genre = authorsResourceParameters.Genre,
+                        searchQuery = authorsResourceParameters.SearchQuery,
+                        pageNumber = authorsResourceParameters.PageNumber,
+                        pageSize = authorsResourceParameters.PageSize
+                    });
+            }
+        }
 
         [HttpGet("{id}", Name = "GetAuthor")]
         public IActionResult GetAuthor(Guid id)

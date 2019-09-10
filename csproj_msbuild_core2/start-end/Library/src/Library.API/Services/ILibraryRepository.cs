@@ -6,7 +6,7 @@ namespace Library.API.Services
 {
     public interface ILibraryRepository
     {
-        IEnumerable<Author> GetAuthors();
+        Helpers.PagedList<Author> GetAuthors(Helpers.AuthorsResourceParameters parameters);
         Author GetAuthor(Guid authorId);
         IEnumerable<Author> GetAuthors(IEnumerable<Guid> authorIds);
         void AddAuthor(Author author);
