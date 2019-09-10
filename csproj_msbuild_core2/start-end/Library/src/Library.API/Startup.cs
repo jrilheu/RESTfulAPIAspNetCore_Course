@@ -9,7 +9,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Mvc.Formatters;
-
+using Microsoft.AspNetCore.Diagnostics;
+using NLog.Extensions.Logging;
 
 namespace Library.API
 {
@@ -50,8 +51,11 @@ namespace Library.API
         public void Configure(IApplicationBuilder app, IHostingEnvironment env,
             ILoggerFactory loggerFactory, LibraryContext libraryContext)
         {
+            loggerFactory.AddConsole();
+
             if (env.IsDevelopment())
             {
+                loggerFactory.AddDebug(LogLevel.Information);
                 app.UseDeveloperExceptionPage();
             }
             else
@@ -60,6 +64,12 @@ namespace Library.API
                 {
                     appBuilder.Run(async context =>
                     {
+                        var exceptionHandlerFeature = context.Features.Get<IExceptionHandlerFeature>();
+                        if (exceptionHandlerFeature != null)
+                        {
+                            var logger = loggerFactory.CreateLogger("Global exception logger");
+                            logger.LogError(500, exceptionHandlerFeature.Error, exceptionHandlerFeature.Error.Message);
+                        }
                         context.Response.StatusCode = 500;
                         await context.Response.WriteAsync("Un error ha ocurrido, cuec");
                     });
@@ -73,11 +83,11 @@ namespace Library.API
                     .ForMember(dest => dest.Name, opt => opt.MapFrom(src => $"{src.FirstName} {src.LastName}"))
                     .ForMember(dest => dest.Age, opt => opt.MapFrom(src => src.DateOfBirth.GetCurrentAge()));
 
-                config.CreateMap<Entities.Book, Models.BookDTO>();
-                config.CreateMap<Models.AuthorForCreationDTO, Entities.Author>();
-                config.CreateMap<Models.BookForCreationDTO, Entities.Book>();
-                config.CreateMap<Models.BookForUpdateDTO, Entities.Book>();
-                config.CreateMap<Entities.Book, Models.BookForUpdateDTO>();
+                config.CreateMap<Entities.Book, Models.BookDto>();
+                config.CreateMap<Models.AuthorForCreationDto, Entities.Author>();
+                config.CreateMap<Models.BookForCreationDto, Entities.Book>();
+                config.CreateMap<Models.BookForUpdateDto, Entities.Book>();
+                config.CreateMap<Entities.Book, Models.BookForUpdateDto>();
             });
 
             libraryContext.EnsureSeedDataForContext();

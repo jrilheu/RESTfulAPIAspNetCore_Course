@@ -1,14 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace Library.API.Models
 {
-    public class BookForUpdateDTO
+    public class BookForUpdateDto : BookForManipulationDto
     {
-        public string Title { get; set; }
-        public string Description { get; set; }
-
+        [Required(ErrorMessage = "Description es requerido")]
+        public override string Description
+        {
+            get => base.Description; 
+            set => base.Description = value; 
+        }
     }
 }

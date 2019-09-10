@@ -42,7 +42,7 @@ namespace Library.API.Controllers
         }
 
         [HttpPost]
-        public IActionResult CreateAuthor([FromBody] AuthorForCreationDTO author)
+        public IActionResult CreateAuthor([FromBody] AuthorForCreationDto author)
         {
             if (author == null)
             {
