@@ -1,4 +1,5 @@
-﻿using Library.API.Models;
+﻿using Library.API.Helpers;
+using Library.API.Models;
 using Library.API.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -13,17 +14,21 @@ namespace Library.API.Controllers
         readonly ILibraryRepository _libraryRepository;
         private readonly IUrlHelper _urlHelper;
         private readonly IPropertyMappingService _propertyMappingService;
+        private readonly ITypeHelperService _typeHelperService;
 
         public AuthorsController(ILibraryRepository libraryRepository, 
             IUrlHelper urlHelper,
-            IPropertyMappingService propertyMappingService)
+            IPropertyMappingService propertyMappingService,
+            ITypeHelperService typeHelperService)
         {
             _libraryRepository = libraryRepository;
             this._urlHelper = urlHelper;
             this._propertyMappingService = propertyMappingService;
+            this._typeHelperService = typeHelperService;
         }
 
         [HttpGet(Name = "GetAuthors")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "argument can be nullable")]
         public IActionResult GetAuthors([FromQuery] Helpers.AuthorsResourceParameters parameters)
         {
 
@@ -32,6 +37,10 @@ namespace Library.API.Controllers
                 return BadRequest();
             }
 
+            if (!_typeHelperService.TypeHasProperties<AuthorDto>(parameters.Fields))
+            {
+                return BadRequest();
+            }
 
             IEnumerable<AuthorDto> authors;
             var authorsFromRepo = _libraryRepository.GetAuthors(parameters);
@@ -56,7 +65,7 @@ namespace Library.API.Controllers
 
             authors = AutoMapper.Mapper.Map<IEnumerable<AuthorDto>>(authorsFromRepo);
 
-            return Ok(authors);
+            return Ok(authors.ShapeData(parameters.Fields));
         }
 
         string CreateAuthorsResourceUri(
@@ -69,6 +78,7 @@ namespace Library.API.Controllers
                     return _urlHelper.Link("GetAuthors",
                       new
                       {
+                          fields = authorsResourceParameters.Fields,
                           orderBy = authorsResourceParameters.OrderBy,
                           genre = authorsResourceParameters.Genre,
                           searchQuery = authorsResourceParameters.SearchQuery,
@@ -79,6 +89,7 @@ namespace Library.API.Controllers
                     return _urlHelper.Link("GetAuthors",
                       new
                       {
+                          fields = authorsResourceParameters.Fields,
                           orderBy = authorsResourceParameters.OrderBy,
                           genre = authorsResourceParameters.Genre,
                           searchQuery = authorsResourceParameters.SearchQuery,
@@ -90,6 +101,7 @@ namespace Library.API.Controllers
                     return _urlHelper.Link("GetAuthors",
                     new
                     {
+                        fields = authorsResourceParameters.Fields,
                         orderBy = authorsResourceParameters.OrderBy,
                         genre = authorsResourceParameters.Genre,
                         searchQuery = authorsResourceParameters.SearchQuery,
@@ -100,15 +112,20 @@ namespace Library.API.Controllers
         }
 
         [HttpGet("{id}", Name = "GetAuthor")]
-        public IActionResult GetAuthor(Guid id)
+        public IActionResult GetAuthor(Guid id, [FromQuery] string fields)
         {
+            if (!_typeHelperService.TypeHasProperties<AuthorDto>(fields))
+            {
+                return BadRequest();
+            }
+
             var authorsFromRepo = _libraryRepository.GetAuthor(id);
 
             if (authorsFromRepo == null)
                 return NotFound();
 
             var author = AutoMapper.Mapper.Map<AuthorDto>(authorsFromRepo);
-            return Ok(author);
+            return Ok(author.ShapeData(fields));
         }
 
         [HttpPost]
@@ -123,7 +140,7 @@ namespace Library.API.Controllers
             _libraryRepository.AddAuthor(authorEntity);
             if (!_libraryRepository.Save())
             {
-                throw new Exception("dallo la creacion del autor al guardar");
+                throw new Exception("fallo la creacion del autor al guardar");
             }
 
             var authorToReturn = AutoMapper.Mapper.Map<Models.AuthorDto>(authorEntity);

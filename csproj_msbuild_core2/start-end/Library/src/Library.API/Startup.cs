@@ -13,12 +13,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json.Serialization;
 
 namespace Library.API
 {
     public class Startup
     {
-        public static IConfiguration Configuration;
+        IConfiguration Configuration;
 
         public Startup(IConfiguration configuration)
         {
@@ -28,12 +29,16 @@ namespace Library.API
         public void ConfigureServices(IServiceCollection services)
         {
             services
-                .AddMvc(options =>
+                .AddMvc(setupAction =>
                 {
-                    options.RespectBrowserAcceptHeader = true;
-                    options.ReturnHttpNotAcceptable = true;
-                    options.OutputFormatters.Add(new XmlDataContractSerializerOutputFormatter());
-                    options.InputFormatters.Add(new XmlDataContractSerializerInputFormatter());
+                    setupAction.RespectBrowserAcceptHeader = true;
+                    setupAction.ReturnHttpNotAcceptable = true;
+                    setupAction.OutputFormatters.Add(new XmlDataContractSerializerOutputFormatter());
+                    setupAction.InputFormatters.Add(new XmlDataContractSerializerInputFormatter());
+                })
+                .AddJsonOptions(options =>
+                { 
+                    options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
                 })
                 .AddXmlDataContractSerializerFormatters();
 
@@ -53,9 +58,12 @@ namespace Library.API
             });
 
             services.AddTransient<IPropertyMappingService, PropertyMappingService>();
+            services.AddTransient<ITypeHelperService, TypeHelperService>();
         }
 
+
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "Method gets called by the runtime")]
         public void Configure(IApplicationBuilder app, IHostingEnvironment env,
             ILoggerFactory loggerFactory, LibraryContext libraryContext)
         {
